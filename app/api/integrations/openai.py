@@ -6,9 +6,8 @@ from typing import Union
 import openai
 from openai.error import APIConnectionError, APIError, RateLimitError
 
-from app.logger import logger
+from app.logger.logger import custom_logger
 
-log = logger.get_logger(__name__)
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
@@ -53,10 +52,10 @@ class OpenAIIntegrationService:
                 break
             except retry_exceptions as e:
                 if _ == 2:
-                    log.error(f"Last attempt failed, Exception occurred: {e}.")
+                    custom_logger.error(f"Last attempt failed, Exception occurred: {e}.")
                     return {"answer": "Sorry, I'm having technical issues."}
                 retry_time = getattr(e, "retry_after", 3)
-                log.error(
+                custom_logger.error(
                     f"Exception occurred: {e}. Retrying in {retry_time} seconds..."
                 )
                 time.sleep(retry_time)
@@ -85,13 +84,13 @@ class OpenAIIntegrationService:
                 break
             except retry_exceptions as e:
                 if _ == 2:
-                    log.error(f"Last attempt failed, Exception occurred: {e}.")
+                    custom_logger.error(f"Last attempt failed, Exception occurred: {e}.")
                     return {
                         "intent": False,
                         "answer": "Sorry, I'm having technical issues.",
                     }
                 retry_time = getattr(e, "retry_after", 3)
-                log.error(
+                custom_logger.error(
                     f"Exception occurred: {e}. Retrying in {retry_time} seconds..."
                 )
                 time.sleep(retry_time)
@@ -110,10 +109,10 @@ class OpenAIIntegrationService:
             else:
                 raise ValueError("The response from the model is not valid.")
         except ValueError as e:
-            log.error(f"Error occurred while parsing response: {e}")
-            log.error(f"Prompt from the user: {prompt}")
-            log.error(f"Response from the model: {response_message}")
-            log.info("Returning a safe response to the user.")
+            custom_logger.error(f"Error occurred while parsing response: {e}")
+            custom_logger.error(f"Prompt from the user: {prompt}")
+            custom_logger.error(f"Response from the model: {response_message}")
+            custom_logger.info("Returning a safe response to the user.")
             response_data = {"intent": False, "answer": response_message}
 
         return response_data
@@ -142,10 +141,10 @@ class OpenAIIntegrationService:
                 break
             except retry_exceptions as e:
                 if _ == 2:
-                    log.error(f"Last attempt failed, Exception occurred: {e}.")
+                    custom_logger.error(f"Last attempt failed, Exception occurred: {e}.")
                     raise
                 retry_time = getattr(e, "retry_after", 3)
-                log.error(
+                custom_logger.error(
                     f"Exception occurred: {e}. Retrying in {retry_time} seconds..."
                 )
                 time.sleep(retry_time)
@@ -158,9 +157,9 @@ class OpenAIIntegrationService:
                     "The response from the model is not valid. Missing summary."
                 )
         except ValueError as e:
-            log.error(f"Error occurred while parsing response: {e}")
-            log.error(f"Response from the model: {response_message}")
-            log.info("Returning a safe response to the user.")
+            custom_logger.error(f"Error occurred while parsing response: {e}")
+            custom_logger.error(f"Response from the model: {response_message}")
+            custom_logger.info("Returning a safe response to the user.")
             raise
 
         return response_data

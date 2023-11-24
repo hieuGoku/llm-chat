@@ -18,9 +18,8 @@ from app.api.integrations.processing import (
 from app.api.service.message import MessageService
 from app.api.service.conversation import ConversationService
 from app.api.integrations.openai import OpenAIIntegrationService
-from app.logger import logger
+from app.logger.logger import custom_logger
 
-log = logger.get_logger(__name__)
 
 router = APIRouter()
 message_service = MessageService()
@@ -32,9 +31,9 @@ async def manage_messages(conversation_id: str, db: Session = Depends(get_db)):
     """
     Get all messages for a conversation endpoint.
     """
-    log.info(f"Getting all messages for conversation id: {conversation_id}")
+    custom_logger.info(f"Getting all messages for conversation id: {conversation_id}")
     db_messages = message_service.get_messages(db, conversation_id)
-    log.info(f"Messages: {db_messages}")
+    custom_logger.info(f"Messages: {db_messages}")
 
     return db_messages
 
@@ -53,8 +52,8 @@ async def chat_completion(message: UserMessageSchema, db: Session = Depends(get_
     }
     ```
     """
-    log.info(f"User conversation id: {message.conversation_id}")
-    log.info(f"User message: {message.message}")
+    custom_logger.info(f"User conversation id: {message.conversation_id}")
+    custom_logger.info(f"User message: {message.message}")
 
     conversation = conversation_service.get_conversation(db, message.conversation_id)
 
@@ -71,7 +70,7 @@ async def chat_completion(message: UserMessageSchema, db: Session = Depends(get_
             detail="Conversation not found. Please create conversation first.",
         )
 
-    log.info(f"Conversation id: {conversation.id}")
+    custom_logger.info(f"Conversation id: {conversation.id}")
 
     # NOTE: We are crafting the context first and passing the chat messages in a list
     # appending the first message (the approach from the agent) to it.
@@ -85,7 +84,7 @@ async def chat_completion(message: UserMessageSchema, db: Session = Depends(get_
     hist_messages.sort(key=lambda x: x.timestamp, reverse=False)
     if len(hist_messages) > 0:
         for mes in hist_messages:
-            log.info(
+            custom_logger.info(
                 f"Conversation history message: {mes.user_message} | {mes.agent_message}"
             )
             chat_messages.append({"role": "user", "content": mes.user_message})
@@ -94,7 +93,7 @@ async def chat_completion(message: UserMessageSchema, db: Session = Depends(get_
     # rules to the length of the history.
     # if len(hist_messages) > 10:
     #     # Finish the conversation gracefully.
-    #     log.info("Conversation history is too long, finishing conversation.")
+    #     custom_logger.info("Conversation history is too long, finishing conversation.")
     #     api_response = agents.api.schemas.ChatAgentResponseSchema(
     #         conversation_id = message.conversation_id,
     #         response        = "This conversation is over, good bye."
@@ -121,7 +120,7 @@ async def chat_completion(message: UserMessageSchema, db: Session = Depends(get_
         presence_penalty=0,
     )
 
-    log.info(f"Agent response: {response}")
+    custom_logger.info(f"Agent response: {response}")
 
     # Prepare response to the user
     api_response = ChatAgentResponseSchema(
@@ -137,6 +136,6 @@ async def chat_completion(message: UserMessageSchema, db: Session = Depends(get_
             agent_message=response.get("answer"),
         ),
     )
-    log.info(f"Conversation message id {db_message.id} saved to database")
+    custom_logger.info(f"Conversation message id {db_message.id} saved to database")
 
     return api_response
